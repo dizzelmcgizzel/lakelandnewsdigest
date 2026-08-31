@@ -47,8 +47,8 @@
     },
     {
       "id": "lakeland_schools_board",
-      "name": "Lakeland School System & Board (LSS)",
-      "url": "https://news.google.com/rss/search?q=(%22Lakeland+School+System%22+OR+%22Lakeland+Prep%22+OR+(%22Lakeland+Elementary%22+AND+(%22TN%22+OR+%22Tennessee%22+OR+%22LSS%22+OR+%22Lakeland%22))+OR+%22Lakeland+School+Board%22+OR+site:lakelandk12.org)+-Coldwater+-Mississippi+-MS+-Tate+when:7d&hl=en-US&gl=US&ceid=US:en",
+      "name": "Lakeland School System & Board (LES / LMPS / LPS)",
+      "url": "https://news.google.com/rss/search?q=(%22Lakeland+School+System%22+OR+%22Lakeland+Prep%22+OR+%22Lakeland+Middle+Prep%22+OR+%22Lakeland+Middle+Preparatory%22+OR+%22LMPS%22+OR+(%22Lakeland+Elementary%22+AND+(%22TN%22+OR+%22Tennessee%22+OR+%22LSS%22+OR+%22Lakeland%22))+OR+%22Lakeland+School+Board%22+OR+site:lakelandk12.org)+-Coldwater+-Mississippi+-MS+-Tate+when:7d&hl=en-US&gl=US&ceid=US:en",
       "default_category": "education",
       "enabled": true
     },
@@ -87,10 +87,32 @@
       "keywords": ["calendar", "meeting", "event", "festival", "concert", "lamp", "harvest festival"]
     },
     "education": {
-      "title": "Lakeland Schools & School Board (LSS / LPS)",
+      "title": "Lakeland Schools & School Board (LES, LMPS, LPS)",
       "icon": "🏫",
       "priority": 4,
-      "keywords": ["school", "lakeland prep", "elementary", "lss", "school board", "teacher", "student", "athletics", "basketball", "volleyball", "cross country", "football", "graduation", "superintendent", "academic"]
+      "keywords": [
+        "school",
+        "lakeland prep",
+        "lakeland middle prep",
+        "lakeland middle preparatory",
+        "lmps",
+        "lps",
+        "les",
+        "lakeland elementary",
+        "lss",
+        "school board",
+        "teacher",
+        "student",
+        "athletics",
+        "basketball",
+        "volleyball",
+        "cross country",
+        "football",
+        "soccer",
+        "graduation",
+        "superintendent",
+        "academic"
+      ]
     },
     "development": {
       "title": "Business, Real Estate & Growth",

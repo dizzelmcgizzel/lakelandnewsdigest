@@ -48,7 +48,7 @@
     {
       "id": "lakeland_schools_board",
       "name": "Lakeland School System & Board (LSS)",
-      "url": "https://news.google.com/rss/search?q=(%22Lakeland+School+System%22+OR+%22Lakeland+Prep%22+OR+%22Lakeland+Elementary%22+OR+%22Lakeland+School+Board%22+OR+site:lakelandk12.org)+when:7d&hl=en-US&gl=US&ceid=US:en",
+      "url": "https://news.google.com/rss/search?q=(%22Lakeland+School+System%22+OR+%22Lakeland+Prep%22+OR+(%22Lakeland+Elementary%22+AND+(%22TN%22+OR+%22Tennessee%22+OR+%22LSS%22+OR+%22Lakeland%22))+OR+%22Lakeland+School+Board%22+OR+site:lakelandk12.org)+-Coldwater+-Mississippi+-MS+-Tate+when:7d&hl=en-US&gl=US&ceid=US:en",
       "default_category": "education",
       "enabled": true
     },
@@ -118,6 +118,11 @@
     }
   },
   "filter_exclude_keywords": [
+    "coldwater",
+    "coldwater, ms",
+    "coldwater ms",
+    "mississippi",
+    "tate county",
     "lakeland florida",
     "lakeland fl",
     "lakeland magic",
@@ -131,6 +136,7 @@
     "realtor.com",
     "zillow",
     "redfin",
+    "trulia",
     "pressure map",
     "precipitation forecast map",
     "south tennessee avenue"

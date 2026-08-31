@@ -1,7 +1,7 @@
 {
   "digest_title": "Lakeland, TN Community News Digest",
-  "lookback_days": 3,
-  "max_items_per_category": 8,
+  "lookback_days": 7,
+  "max_items_per_category": 6,
   "feeds": [
     {
       "id": "lakeland_city_news",
@@ -27,16 +27,9 @@
     {
       "id": "regional_google_news",
       "name": "Regional News & Business",
-      "url": "https://news.google.com/rss/search?q=%22Lakeland%22+AND+(%22Tennessee%22+OR+%22TN%22)+-obituary+-obituaries+-Florida+-FL+-Polk&hl=en-US&gl=US&ceid=US:en",
+      "url": "https://news.google.com/rss/search?q=%22Lakeland%22+AND+(%22Tennessee%22+OR+%22TN%22)+-obituary+-obituaries+-Florida+-FL+-Polk+when:7d&hl=en-US&gl=US&ceid=US:en",
       "default_category": "regional_news",
       "enabled": true
-    },
-    {
-      "id": "reddit_memphis_lakeland",
-      "name": "Reddit Community (r/memphis - Lakeland)",
-      "url": "https://www.reddit.com/r/memphis/search.rss?q=Lakeland&restrict_sr=1&sort=new",
-      "default_category": "community",
-      "enabled": false
     }
   ],
   "categories": {
@@ -75,12 +68,6 @@
       "icon": "🗞️",
       "priority": 6,
       "keywords": ["shelby county", "memphian", "commercial appeal", "fox13", "wreg", "wmc", "abc24"]
-    },
-    "community": {
-      "title": "Community Discussions & Social Buzz",
-      "icon": "🗣️",
-      "priority": 7,
-      "keywords": ["reddit", "discussion", "neighbor", "recommendation"]
     }
   },
   "filter_exclude_keywords": [

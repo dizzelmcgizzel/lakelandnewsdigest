@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 Lakeland TN Custom News Digest - Builder
-Fetches RSS feeds, filters noise, deduplicates, categorizes, and generates HTML email digests.
+Fetches RSS feeds, filters noise, deduplicates, generates 3-4 sentence summaries,
+and produces HTML email digests.
 """
 
 import os
@@ -17,7 +18,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import xml.etree.ElementTree as ET
 from difflib import SequenceMatcher
 
-USER_AGENT = "python:lakeland.news.digest:v1.0 (by /u/lakeland_digest_bot; contact: admin@lakelanddigest.local)"
+USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
 
 
 def clean_html_text(raw_html: str) -> str:
@@ -29,14 +30,47 @@ def clean_html_text(raw_html: str) -> str:
     text = re.sub(r'<style.*?</style>', '', text, flags=re.DOTALL | re.IGNORECASE)
     text = re.sub(r'<[^>]+>', ' ', text)
     text = re.sub(r'The post\s+.*?\s+appeared first on\s+.*?\.', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'\[\.\.\.\]|\[&#8230;\]|\.\.\.', ' ', text)
+    text = re.sub(r'Create a Website Account.*?Contact Us', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'Search autocomplete is currently not responding.*', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'Phone:\s*901-867-\d+', '', text)
+    text = re.sub(r'&nbsp;', ' ', text)
     text = re.sub(r'\s+', ' ', text).strip()
     return text
 
 
+def extract_3_to_4_sentences(text: str, target_sentences: int = 3) -> str:
+    """Extracts 3-4 full, coherent, deduplicated sentences from a text snippet."""
+    if not text:
+        return ""
+    cleaned = clean_html_text(text)
+    sentence_candidates = re.split(r'(?<=[.!?])\s+', cleaned)
+    seen = set()
+    clean_sentences = []
+    
+    for s in sentence_candidates:
+        s_clean = s.strip()
+        s_lower = s_clean.lower()
+        if len(s_clean) < 18 or s_lower in seen:
+            continue
+        if s_lower.startswith("the post") or s_lower.startswith("read more") or "cookie policy" in s_lower:
+            continue
+        seen.add(s_lower)
+        clean_sentences.append(s_clean)
+        if len(clean_sentences) >= 4:
+            break
+
+    if len(clean_sentences) >= 3:
+        return " ".join(clean_sentences[:4])
+    elif clean_sentences:
+        return " ".join(clean_sentences)
+    return cleaned[:350].strip()
+
+
 def parse_date(date_str: str) -> datetime:
-    """Parses various date string formats (RFC 822, ISO 8601) to UTC datetime."""
+    """Parses RFC 822 or ISO 8601 date strings to UTC datetime."""
     if not date_str:
-        return datetime.now(timezone.utc)
+        return None
     date_str = date_str.strip()
     
     try:
@@ -61,11 +95,11 @@ def parse_date(date_str: str) -> datetime:
         except Exception:
             continue
 
-    return datetime.now(timezone.utc)
+    return None
 
 
 def fetch_url(url: str, timeout: int = 15) -> str:
-    """Fetches text content from a URL with browser-like headers."""
+    """Fetches text content from a URL with browser headers."""
     req = urllib.request.Request(
         url,
         headers={
@@ -78,6 +112,41 @@ def fetch_url(url: str, timeout: int = 15) -> str:
         return response.read().decode(charset, errors="replace")
 
 
+def fetch_article_lead_sentences(url: str) -> str:
+    """Fetches article page to extract the lead paragraph (3-4 sentences) when RSS is brief."""
+    if not url or "reddit.com" in url:
+        return ""
+    try:
+        req = urllib.request.Request(
+            url,
+            headers={
+                "User-Agent": USER_AGENT,
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+            }
+        )
+        with urllib.request.urlopen(req, timeout=4) as resp:
+            html_doc = resp.read().decode("utf-8", errors="replace")
+            
+            # Try Open Graph description or Meta Description
+            og_match = re.search(r'<meta\s+(?:property="og:description"|name="description")\s+content="([^"]+)"', html_doc, re.I)
+            if not og_match:
+                og_match = re.search(r'<meta\s+content="([^"]+)"\s+(?:property="og:description"|name="description")', html_doc, re.I)
+            
+            meta_desc = ""
+            if og_match:
+                meta_desc = clean_html_text(og_match.group(1))
+
+            # Extract first 3 paragraph texts
+            p_matches = re.findall(r'<p[^>]*>(.*?)</p>', html_doc, re.DOTALL | re.I)
+            p_texts = [clean_html_text(p) for p in p_matches if len(clean_html_text(p)) > 40]
+            
+            combined = meta_desc + " " + " ".join(p_texts[:3]) if meta_desc else " ".join(p_texts[:3])
+            summary = extract_3_to_4_sentences(combined, target_sentences=3)
+            return summary
+    except Exception:
+        return ""
+
+
 def parse_feed_xml(xml_content: str, feed_meta: dict) -> list:
     """Parses RSS or Atom XML string and returns list of standardized article dicts."""
     articles = []
@@ -85,7 +154,7 @@ def parse_feed_xml(xml_content: str, feed_meta: dict) -> list:
         clean_xml = re.sub(r' xmlns(:[a-zA-Z0-9_-]+)?="[^"]+"', '', xml_content, count=1)
         root = ET.fromstring(clean_xml)
     except Exception:
-        return parse_feed_regex(xml_content, feed_meta)
+        return []
 
     # RSS 2.0
     channel = root.find("channel")
@@ -102,10 +171,15 @@ def parse_feed_xml(xml_content: str, feed_meta: dict) -> list:
             title = clean_html_text(title_el.text if title_el is not None else "")
             link = (link_el.text or "").strip() if link_el is not None else ""
             pub_date_str = pub_el.text if pub_el is not None else ""
-            desc = clean_html_text(desc_el.text if desc_el is not None else "")
+            parsed_dt = parse_date(pub_date_str)
             
-            if not desc and content_el is not None and content_el.text:
-                desc = clean_html_text(content_el.text)
+            raw_desc = ""
+            if content_el is not None and content_el.text:
+                raw_desc = clean_html_text(content_el.text)
+            elif desc_el is not None and desc_el.text:
+                raw_desc = clean_html_text(desc_el.text)
+
+            summary = extract_3_to_4_sentences(raw_desc, target_sentences=3)
 
             source_name = feed_meta.get("name", "Local News")
             if source_el is not None and source_el.text:
@@ -119,8 +193,9 @@ def parse_feed_xml(xml_content: str, feed_meta: dict) -> list:
                 articles.append({
                     "title": title,
                     "link": link,
-                    "published_at": parse_date(pub_date_str),
-                    "summary": desc[:300] + ("..." if len(desc) > 300 else ""),
+                    "published_at": parsed_dt,
+                    "summary": summary,
+                    "raw_desc": raw_desc,
                     "source_name": source_name,
                     "feed_id": feed_meta.get("id", "feed"),
                     "default_category": feed_meta.get("default_category", "local_news")
@@ -142,54 +217,23 @@ def parse_feed_xml(xml_content: str, feed_meta: dict) -> list:
                 link = link_el.attrib.get("href", link_el.text or "").strip()
 
             pub_date_str = pub_el.text if pub_el is not None else ""
-            desc = clean_html_text(summary_el.text if summary_el is not None else "")
+            parsed_dt = parse_date(pub_date_str)
+            raw_desc = clean_html_text(summary_el.text if summary_el is not None else "")
+            summary = extract_3_to_4_sentences(raw_desc, target_sentences=3)
 
             if title and link:
                 articles.append({
                     "title": title,
                     "link": link,
-                    "published_at": parse_date(pub_date_str),
-                    "summary": desc[:300] + ("..." if len(desc) > 300 else ""),
+                    "published_at": parsed_dt,
+                    "summary": summary,
+                    "raw_desc": raw_desc,
                     "source_name": feed_meta.get("name", "Local News"),
                     "feed_id": feed_meta.get("id", "feed"),
                     "default_category": feed_meta.get("default_category", "local_news")
                 })
         return articles
 
-    return articles
-
-
-def parse_feed_regex(raw_content: str, feed_meta: dict) -> list:
-    """Fallback parser using regular expressions for resilient handling."""
-    articles = []
-    item_matches = re.findall(r'<item>(.*?)</item>', raw_content, flags=re.DOTALL | re.IGNORECASE)
-    for block in item_matches:
-        title_m = re.search(r'<title>(.*?)</title>', block, flags=re.DOTALL | re.IGNORECASE)
-        link_m = re.search(r'<link>(.*?)</link>', block, flags=re.DOTALL | re.IGNORECASE)
-        pub_m = re.search(r'<pubDate>(.*?)</pubDate>', block, flags=re.DOTALL | re.IGNORECASE)
-        desc_m = re.search(r'<description>(.*?)</description>', block, flags=re.DOTALL | re.IGNORECASE)
-
-        title = clean_html_text(title_m.group(1)) if title_m else ""
-        link = clean_html_text(link_m.group(1)) if link_m else ""
-        pub_str = pub_m.group(1).strip() if pub_m else ""
-        desc = clean_html_text(desc_m.group(1)) if desc_m else ""
-
-        source_name = feed_meta.get("name", "Local News")
-        if " - " in title and feed_meta.get("id") == "regional_google_news":
-            parts = title.rsplit(" - ", 1)
-            title = parts[0].strip()
-            source_name = parts[1].strip()
-
-        if title and link:
-            articles.append({
-                "title": title,
-                "link": link,
-                "published_at": parse_date(pub_str),
-                "summary": desc[:300] + ("..." if len(desc) > 300 else ""),
-                "source_name": source_name,
-                "feed_id": feed_meta.get("id", "feed"),
-                "default_category": feed_meta.get("default_category", "local_news")
-            })
     return articles
 
 
@@ -221,7 +265,7 @@ class LakelandDigestBuilder:
         return all_articles
 
     def filter_and_deduplicate(self, articles: list, lookback_days: int = None, seen_urls: set = None) -> list:
-        """Filters out noise/irrelevant keywords, duplicates, and out-of-date articles."""
+        """Enforces strict recent-date cutoff, exclusions, and fuzzy deduplication."""
         if lookback_days is None:
             lookback_days = self.config.get("lookback_days", 7)
         if seen_urls is None:
@@ -234,11 +278,11 @@ class LakelandDigestBuilder:
         collected_titles = []
 
         for item in articles:
-            # Date filter
-            if item["published_at"] < cutoff_date:
+            # Strict Date Cutoff: Reject anything older than lookback_days
+            if item["published_at"] is not None and item["published_at"] < cutoff_date:
                 continue
 
-            # Check seen URL
+            # Check persistent history
             if item["link"] in seen_urls:
                 continue
 
@@ -247,7 +291,7 @@ class LakelandDigestBuilder:
             if any(kw in content_lower for kw in exclude_kws):
                 continue
 
-            # Fuzzy deduplication by title similarity
+            # Fuzzy deduplication by headline similarity (>75% match)
             is_dup = False
             for existing_title in collected_titles:
                 similarity = SequenceMatcher(None, item["title"].lower(), existing_title.lower()).ratio()
@@ -259,8 +303,43 @@ class LakelandDigestBuilder:
                 collected_titles.append(item["title"])
                 filtered.append(item)
 
+        # Fallback date if None was parsed
+        for item in filtered:
+            if item["published_at"] is None:
+                item["published_at"] = datetime.now(timezone.utc)
+
+        # Enrich brief summaries to ensure 3-4 sentences
+        self._enrich_short_summaries(filtered)
+
         filtered.sort(key=lambda x: x["published_at"], reverse=True)
         return filtered
+
+    def _enrich_short_summaries(self, articles: list):
+        """Asynchronously fetches lead paragraphs for articles with brief summaries."""
+        articles_to_enrich = []
+        for art in articles:
+            # If summary has fewer than 2 sentences or under 100 characters
+            sentence_count = len(re.split(r'(?<=[.!?])\s+', art["summary"].strip()))
+            if sentence_count < 2 or len(art["summary"]) < 100:
+                articles_to_enrich.append(art)
+
+        if not articles_to_enrich:
+            return
+
+        print(f"🔍 Enriching {len(articles_to_enrich)} brief article summaries...")
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            future_to_art = {
+                executor.submit(fetch_article_lead_sentences, art["link"]): art
+                for art in articles_to_enrich
+            }
+            for future in as_completed(future_to_art):
+                art = future_to_art[future]
+                try:
+                    lead = future.result()
+                    if lead and len(lead) > len(art["summary"]):
+                        art["summary"] = lead
+                except Exception:
+                    pass
 
     def categorize_article(self, article: dict) -> str:
         """Assigns the best matching category key to an article."""
@@ -279,7 +358,7 @@ class LakelandDigestBuilder:
     def group_by_category(self, articles: list) -> dict:
         """Groups filtered articles into configured categories."""
         categories = self.config.get("categories", {})
-        max_per_cat = self.config.get("max_items_per_category", 8)
+        max_per_cat = self.config.get("max_items_per_category", 6)
         grouped = {k: [] for k in categories.keys()}
 
         for art in articles:
@@ -302,7 +381,7 @@ class LakelandDigestBuilder:
         return sorted_grouped
 
     def generate_html_digest(self, grouped_articles: dict, total_count: int) -> str:
-        """Renders an inline-styled, responsive HTML newsletter."""
+        """Renders an inline-styled, responsive HTML newsletter with 3-4 sentence summaries."""
         today_str = datetime.now().strftime("%A, %B %d, %Y")
         categories_cfg = self.config.get("categories", {})
 
@@ -315,21 +394,23 @@ class LakelandDigestBuilder:
             items_cards = ""
             for item in items:
                 pub_fmt = item["published_at"].strftime("%b %d, %Y")
-                summary_p = f'<p style="margin: 6px 0 0 0; color: #4b5563; font-size: 14px; line-height: 1.5;">{html.escape(item["summary"])}</p>' if item.get("summary") else ""
+                summary_text = item.get("summary", "")
+                
+                summary_p = f'<p style="margin: 8px 0 0 0; color: #374151; font-size: 14px; line-height: 1.6;">{html.escape(summary_text)}</p>' if summary_text else ""
                 
                 items_cards += f"""
-                <div style="background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                <div style="background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 18px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
                         <span style="display: inline-block; background-color: #eff6ff; color: #1e40af; font-weight: 700; font-size: 11px; padding: 3px 8px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
                             {html.escape(item['source_name'])}
                         </span>
-                        <span style="color: #9ca3af; font-size: 12px;">{pub_fmt}</span>
+                        <span style="color: #9ca3af; font-size: 12px; font-weight: 500;">{pub_fmt}</span>
                     </div>
-                    <a href="{html.escape(item['link'])}" target="_blank" style="color: #1e3a8a; text-decoration: none; font-size: 16px; font-weight: 700; line-height: 1.35; display: block; margin-top: 4px;">
+                    <a href="{html.escape(item['link'])}" target="_blank" style="color: #1e3a8a; text-decoration: none; font-size: 16px; font-weight: 700; line-height: 1.35; display: block;">
                         {html.escape(item['title'])}
                     </a>
                     {summary_p}
-                    <div style="margin-top: 10px;">
+                    <div style="margin-top: 12px; border-top: 1px solid #f3f4f6; padding-top: 10px;">
                         <a href="{html.escape(item['link'])}" target="_blank" style="display: inline-block; color: #2563eb; font-size: 13px; font-weight: 600; text-decoration: none;">
                             Read Full Story &rarr;
                         </a>
@@ -352,8 +433,8 @@ class LakelandDigestBuilder:
         if total_count == 0:
             empty_notice = """
             <div style="background-color: #ffffff; border-radius: 8px; padding: 30px; text-align: center; color: #6b7280; border: 1px dashed #d1d5db; margin: 30px 0;">
-                <p style="font-size: 16px; margin: 0;">No new Lakeland updates were published in this window.</p>
-                <p style="font-size: 13px; margin-top: 8px; color: #9ca3af;">All active municipal, news, and community sources are being monitored.</p>
+                <p style="font-size: 16px; margin: 0; font-weight: 600;">No new Lakeland updates were published in the last 7 days.</p>
+                <p style="font-size: 13px; margin-top: 8px; color: #9ca3af;">All active municipal, news, and community sources are being actively monitored.</p>
             </div>
             """
 
@@ -412,7 +493,7 @@ class LakelandDigestBuilder:
         return full_html
 
     def generate_plain_text(self, grouped_articles: dict, total_count: int) -> str:
-        """Generates a clean plain-text fallback version."""
+        """Generates a clean plain-text fallback version with 3-4 sentence summaries."""
         today_str = datetime.now().strftime("%A, %B %d, %Y")
         categories_cfg = self.config.get("categories", {})
         
@@ -424,7 +505,7 @@ class LakelandDigestBuilder:
         ]
 
         if total_count == 0:
-            lines.append("No new Lakeland updates were published in this window.")
+            lines.append("No new Lakeland updates were published in the last 7 days.")
             return "\n".join(lines)
 
         for cat_key, items in grouped_articles.items():

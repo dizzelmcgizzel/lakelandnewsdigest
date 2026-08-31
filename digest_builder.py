@@ -114,7 +114,7 @@ def fetch_url(url: str, timeout: int = 15) -> str:
 
 def fetch_article_lead_sentences(url: str) -> str:
     """Fetches article page to extract the lead paragraph (3-4 sentences) when RSS is brief."""
-    if not url or "reddit.com" in url:
+    if not url or "reddit.com" in url or "google.com" in url or "google.co" in url:
         return ""
     try:
         req = urllib.request.Request(
@@ -124,7 +124,7 @@ def fetch_article_lead_sentences(url: str) -> str:
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
             }
         )
-        with urllib.request.urlopen(req, timeout=4) as resp:
+        with urllib.request.urlopen(req, timeout=2.5) as resp:
             html_doc = resp.read().decode("utf-8", errors="replace")
             
             # Try Open Graph description or Meta Description
@@ -151,7 +151,9 @@ def parse_feed_xml(xml_content: str, feed_meta: dict) -> list:
     """Parses RSS or Atom XML string and returns list of standardized article dicts."""
     articles = []
     try:
-        clean_xml = re.sub(r' xmlns(:[a-zA-Z0-9_-]+)?="[^"]+"', '', xml_content, count=1)
+        # Strip all namespace prefixes like <prefix:tag> -> <tag>
+        clean_xml = re.sub(r'<(/)?([a-zA-Z0-9_-]+):([a-zA-Z0-9_-]+)', r'<\1\3', xml_content)
+        clean_xml = re.sub(r'\s+xmlns(:[a-zA-Z0-9_-]+)?="[^"]+"', '', clean_xml)
         root = ET.fromstring(clean_xml)
     except Exception:
         return []
@@ -167,6 +169,7 @@ def parse_feed_xml(xml_content: str, feed_meta: dict) -> list:
             desc_el = item.find("description") or item.find("summary")
             content_el = item.find("encoded") or item.find("content")
             source_el = item.find("source")
+            event_date_el = item.find("EventDate") or item.find("eventDate")
 
             title = clean_html_text(title_el.text if title_el is not None else "")
             link = (link_el.text or "").strip() if link_el is not None else ""
@@ -179,12 +182,19 @@ def parse_feed_xml(xml_content: str, feed_meta: dict) -> list:
             elif desc_el is not None and desc_el.text:
                 raw_desc = clean_html_text(desc_el.text)
 
+            if event_date_el is not None and event_date_el.text:
+                event_date_str = event_date_el.text.strip()
+                raw_desc = f"Event Date: {event_date_str}. {raw_desc}"
+                # For calendar events, treat upcoming/recent events as current
+                if not parsed_dt:
+                    parsed_dt = datetime.now(timezone.utc)
+
             summary = extract_3_to_4_sentences(raw_desc, target_sentences=3)
 
             source_name = feed_meta.get("name", "Local News")
             if source_el is not None and source_el.text:
                 source_name = source_el.text.strip()
-            elif " - " in title and feed_meta.get("id") == "regional_google_news":
+            elif " - " in title and "google" in feed_meta.get("url", "").lower():
                 parts = title.rsplit(" - ", 1)
                 title = parts[0].strip()
                 source_name = parts[1].strip()

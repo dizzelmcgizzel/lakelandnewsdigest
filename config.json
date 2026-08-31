@@ -18,6 +18,13 @@
       "enabled": true
     },
     {
+      "id": "lakeland_city_calendar",
+      "name": "City of Lakeland (Calendar & Public Meetings)",
+      "url": "https://www.lakelandtn.gov/RSSFeed.aspx?ModID=58&CID=All-agenda.xml",
+      "default_category": "calendar",
+      "enabled": true
+    },
+    {
       "id": "lakeland_currents",
       "name": "Lakeland Currents",
       "url": "https://lakelandcurrents.com/feed/",
@@ -25,9 +32,37 @@
       "enabled": true
     },
     {
-      "id": "regional_google_news",
-      "name": "Regional News & Business",
-      "url": "https://news.google.com/rss/search?q=%22Lakeland%22+AND+(%22Tennessee%22+OR+%22TN%22)+-obituary+-obituaries+-Florida+-FL+-Polk+when:7d&hl=en-US&gl=US&ceid=US:en",
+      "id": "daily_memphian_lakeland",
+      "name": "The Daily Memphian (Lakeland)",
+      "url": "https://news.google.com/rss/search?q=site:dailymemphian.com+Lakeland+when:7d&hl=en-US&gl=US&ceid=US:en",
+      "default_category": "regional_news",
+      "enabled": true
+    },
+    {
+      "id": "commercial_appeal_lakeland",
+      "name": "The Commercial Appeal (Lakeland)",
+      "url": "https://news.google.com/rss/search?q=site:commercialappeal.com+Lakeland+when:7d&hl=en-US&gl=US&ceid=US:en",
+      "default_category": "regional_news",
+      "enabled": true
+    },
+    {
+      "id": "lakeland_schools_board",
+      "name": "Lakeland School System & Board (LSS)",
+      "url": "https://news.google.com/rss/search?q=(%22Lakeland+School+System%22+OR+%22Lakeland+Prep%22+OR+%22Lakeland+Elementary%22+OR+%22Lakeland+School+Board%22+OR+site:lakelandk12.org)+when:7d&hl=en-US&gl=US&ceid=US:en",
+      "default_category": "education",
+      "enabled": true
+    },
+    {
+      "id": "shelby_county_scso",
+      "name": "Shelby County Gov & Sheriff (SCSO)",
+      "url": "https://news.google.com/rss/search?q=(%22Shelby+County+Sheriff%22+OR+SCSO+OR+%22Shelby+County+Commission%22)+AND+Lakeland+when:7d&hl=en-US&gl=US&ceid=US:en",
+      "default_category": "safety_county",
+      "enabled": true
+    },
+    {
+      "id": "local_broadcast_news",
+      "name": "Local TV News (WREG, FOX13, WMC, ABC24)",
+      "url": "https://news.google.com/rss/search?q=(site:wreg.com+OR+site:fox13memphis.com+OR+site:actionnews5.com+OR+site:localmemphis.com)+Lakeland+when:7d&hl=en-US&gl=US&ceid=US:en",
       "default_category": "regional_news",
       "enabled": true
     }
@@ -40,34 +75,46 @@
       "keywords": ["alert", "boil water", "closure", "closed", "warning", "emergency", "traffic advisory", "power outage"]
     },
     "government": {
-      "title": "City Government & Public Works",
+      "title": "City Government, Agendas & Public Works",
       "icon": "🏛️",
       "priority": 2,
-      "keywords": ["board of commissioners", "boc", "city hall", "city manager", "ordinance", "resolution", "zoning", "public works", "budget", "parks and recreation", "planning commission", "idb", "edc", "election", "mayor"]
+      "keywords": ["board of commissioners", "boc", "city hall", "city manager", "ordinance", "resolution", "zoning", "public works", "budget", "planning commission", "idb", "edc", "election", "mayor", "agenda"]
+    },
+    "calendar": {
+      "title": "Upcoming Meetings & Community Calendar",
+      "icon": "📅",
+      "priority": 3,
+      "keywords": ["calendar", "meeting", "event", "festival", "concert", "lamp", "harvest festival"]
     },
     "education": {
-      "title": "Schools & Lakeland Prep Athletics",
+      "title": "Lakeland Schools & School Board (LSS / LPS)",
       "icon": "🏫",
-      "priority": 3,
-      "keywords": ["school", "lakeland prep", "elementary", "lss", "teacher", "student", "athletics", "basketball", "volleyball", "cross country", "football", "graduation", "superintendent", "academic"]
+      "priority": 4,
+      "keywords": ["school", "lakeland prep", "elementary", "lss", "school board", "teacher", "student", "athletics", "basketball", "volleyball", "cross country", "football", "graduation", "superintendent", "academic"]
     },
     "development": {
-      "title": "Business, Real Estate & Development",
+      "title": "Business, Real Estate & Growth",
       "icon": "🏗️",
-      "priority": 4,
-      "keywords": ["lake district", "ashmont", "town center", "retail", "business", "restaurant", "store", "construction", "developer", "housing", "subdivision", "commercial", "opening", "lease", "tennessee highway patrol", "thp"]
+      "priority": 5,
+      "keywords": ["lake district", "ashmont", "town center", "retail", "business", "restaurant", "store", "construction", "developer", "housing", "subdivision", "commercial", "opening", "lease", "chamber", "luncheon"]
+    },
+    "safety_county": {
+      "title": "Shelby County Government & Sheriff (SCSO)",
+      "icon": "🛡️",
+      "priority": 6,
+      "keywords": ["shelby county", "sheriff", "scso", "county commission", "property tax", "thp", "patrol"]
     },
     "local_news": {
-      "title": "Hyperlocal & Community Life",
+      "title": "Hyperlocal News (Lakeland Currents)",
       "icon": "📰",
-      "priority": 5,
+      "priority": 7,
       "keywords": []
     },
     "regional_news": {
-      "title": "Regional Coverage & Shelby County",
+      "title": "Regional Coverage (Daily Memphian, Commercial Appeal & TV)",
       "icon": "🗞️",
-      "priority": 6,
-      "keywords": ["shelby county", "memphian", "commercial appeal", "fox13", "wreg", "wmc", "abc24"]
+      "priority": 8,
+      "keywords": ["memphian", "commercial appeal", "fox13", "wreg", "wmc", "action news 5", "abc24"]
     }
   },
   "filter_exclude_keywords": [

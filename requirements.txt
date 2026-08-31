@@ -1,0 +1,2 @@
+# No external dependencies required!
+# Lakeland News Digest runs entirely on Python 3's standard library.

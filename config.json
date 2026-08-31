@@ -1,0 +1,104 @@
+{
+  "digest_title": "Lakeland, TN Community News Digest",
+  "lookback_days": 3,
+  "max_items_per_category": 8,
+  "feeds": [
+    {
+      "id": "lakeland_city_news",
+      "name": "City of Lakeland (Official News)",
+      "url": "https://lakelandtn.gov/RSSFeed.aspx?ModID=1&CID=All-newsflash.xml",
+      "default_category": "government",
+      "enabled": true
+    },
+    {
+      "id": "lakeland_city_alerts",
+      "name": "City of Lakeland (Alert Center)",
+      "url": "https://lakelandtn.gov/AlertCenter.aspx?RSS=All",
+      "default_category": "alerts",
+      "enabled": true
+    },
+    {
+      "id": "lakeland_currents",
+      "name": "Lakeland Currents",
+      "url": "https://lakelandcurrents.com/feed/",
+      "default_category": "local_news",
+      "enabled": true
+    },
+    {
+      "id": "regional_google_news",
+      "name": "Regional News & Business",
+      "url": "https://news.google.com/rss/search?q=%22Lakeland%22+AND+(%22Tennessee%22+OR+%22TN%22)+-obituary+-obituaries+-Florida+-FL+-Polk&hl=en-US&gl=US&ceid=US:en",
+      "default_category": "regional_news",
+      "enabled": true
+    },
+    {
+      "id": "reddit_memphis_lakeland",
+      "name": "Reddit Community (r/memphis - Lakeland)",
+      "url": "https://www.reddit.com/r/memphis/search.rss?q=Lakeland&restrict_sr=1&sort=new",
+      "default_category": "community",
+      "enabled": false
+    }
+  ],
+  "categories": {
+    "alerts": {
+      "title": "Alerts & Public Notices",
+      "icon": "🚨",
+      "priority": 1,
+      "keywords": ["alert", "boil water", "closure", "closed", "warning", "emergency", "traffic advisory", "power outage"]
+    },
+    "government": {
+      "title": "City Government & Public Works",
+      "icon": "🏛️",
+      "priority": 2,
+      "keywords": ["board of commissioners", "boc", "city hall", "city manager", "ordinance", "resolution", "zoning", "public works", "budget", "parks and recreation", "planning commission", "idb", "edc", "election", "mayor"]
+    },
+    "education": {
+      "title": "Schools & Lakeland Prep Athletics",
+      "icon": "🏫",
+      "priority": 3,
+      "keywords": ["school", "lakeland prep", "elementary", "lss", "teacher", "student", "athletics", "basketball", "volleyball", "cross country", "football", "graduation", "superintendent", "academic"]
+    },
+    "development": {
+      "title": "Business, Real Estate & Development",
+      "icon": "🏗️",
+      "priority": 4,
+      "keywords": ["lake district", "ashmont", "town center", "retail", "business", "restaurant", "store", "construction", "developer", "housing", "subdivision", "commercial", "opening", "lease", "tennessee highway patrol", "thp"]
+    },
+    "local_news": {
+      "title": "Hyperlocal & Community Life",
+      "icon": "📰",
+      "priority": 5,
+      "keywords": []
+    },
+    "regional_news": {
+      "title": "Regional Coverage & Shelby County",
+      "icon": "🗞️",
+      "priority": 6,
+      "keywords": ["shelby county", "memphian", "commercial appeal", "fox13", "wreg", "wmc", "abc24"]
+    },
+    "community": {
+      "title": "Community Discussions & Social Buzz",
+      "icon": "🗣️",
+      "priority": 7,
+      "keywords": ["reddit", "discussion", "neighbor", "recommendation"]
+    }
+  },
+  "filter_exclude_keywords": [
+    "lakeland florida",
+    "lakeland fl",
+    "lakeland magic",
+    "polk county",
+    "theledger",
+    "lakeland ledger",
+    "obituary",
+    "obituaries",
+    "funeral",
+    "memorial service",
+    "realtor.com",
+    "zillow",
+    "redfin",
+    "pressure map",
+    "precipitation forecast map",
+    "south tennessee avenue"
+  ]
+}

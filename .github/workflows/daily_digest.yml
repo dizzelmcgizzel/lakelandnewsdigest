@@ -1,9 +1,9 @@
 name: Lakeland TN Daily News Digest
 
 on:
-  schedule:
-    # Runs daily at 7:00 AM Central Time (12:00 UTC during Daylight Saving Time)
-    - cron: '0 12 * * *'
+  # Daily automated schedule disabled (Uncomment below to re-enable daily runs):
+  # schedule:
+  #   - cron: '0 12 * * *'
   workflow_dispatch: # Allows manual trigger anytime from GitHub Actions tab
 
 jobs:
